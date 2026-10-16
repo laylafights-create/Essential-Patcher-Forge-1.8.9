@@ -1,0 +1,16 @@
+[
+  {
+    "modid": "essentialpatcher",
+    "name": "Essential Patcher",
+    "description": "Legacy Forge 1.8.9 compatibility module for Essential Patcher.",
+    "version": "${version}",
+    "mcversion": "1.8.9",
+    "url": "",
+    "updateUrl": "",
+    "authorList": ["Essential Patcher contributors"],
+    "credits": "",
+    "logoFile": "",
+    "screenshots": [],
+    "dependencies": []
+  }
+]

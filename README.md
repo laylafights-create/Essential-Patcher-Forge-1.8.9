@@ -1,0 +1,141 @@
+<div align="center">
+  <img src="icon.png" alt="Essential Patcher" width="128">
+  <h1>Essential Patcher</h1>
+  <a href="https://www.curseforge.com/minecraft/mc-mods/essential-patcher">Download on CurseForge</a>
+</div>
+
+<div style="border: 2px solid #d1242f; border-radius: 8px; padding: 14px 16px; background: #fff1f1; color: #5f0f14; margin: 16px 0;">
+  <strong>WARNING:</strong> Essential Patcher is unofficial and may conflict with Essential's terms of use or other platform rules. It does not include Essential or Minecraft code/assets, does not modify Essential's servers, and does not forge purchases or account entitlements. Read the full legal position before using or redistributing it: <a href="./LEGALITY.md"><strong>LEGALITY.md</strong></a>.
+</div>
+
+Essential Patcher is a client-side Minecraft mod that patches the Essential mod at runtime.
+
+It is built for users who want more control over Essential's cosmetics, telemetry, ads, purchase prompts, and client-side behavior.
+
+## What It Does
+
+- Unlocks cosmetics locally on your client.
+- Saves your equipped cosmetics locally.
+- Syncs cosmetics with other Essential Patcher users through an independent HTTPS sync service.
+- Blocks Essential telemetry and analytics calls.
+- Removes ads, promos, notices, purchase prompts, and checkout flows.
+- Fixes some Essential cosmetic sync crashes.
+- Keeps the patcher separate from Essential's servers and account entitlements.
+
+## How It Works
+
+Essential Patcher uses Mixins to change Essential while Minecraft is running.
+
+The mod does not edit Essential's JAR. It loads alongside Essential, intercepts selected client-side methods, and changes the result locally.
+
+For cosmetics, the patcher stores your selected cosmetic IDs and settings, sends them to the patcher sync service, and receives cosmetic data from other patcher users in the same session. Only users running Essential Patcher can see this synced cosmetic data.
+
+For privacy, the patcher blocks known telemetry, analytics, and tracking paths before they leave the client.
+
+For ads and purchases, the patcher removes or blocks local UI and packet paths related to promos, coin purchases, checkout, and shop prompts.
+
+## What It Does Not Do
+
+- It does not include Essential's code.
+- It does not include Essential's assets, cosmetics, models, textures, or icons.
+- It does not include Minecraft's code or assets.
+- It does not distribute a modified Essential JAR.
+- It does not distribute a modified Minecraft JAR.
+- It does not create Coins.
+- It does not submit fake purchases.
+- It does not modify Essential account ownership records.
+- It does not make non-patcher users see patched cosmetics.
+
+## Cosmetic Sync Server -- Privacy (GDPR)
+
+Essential Patcher runs an independent cosmetic sync service at `cosmetics.leclowndu93150.dev` so patcher users can see each other's cosmetics. Its full source is in [`server/`](server) in this repository. Here is exactly what is stored and what is not.
+
+### What is stored
+
+| Data | Purpose | Retention |
+|------|---------|-----------|
+| Minecraft UUID | Identify which player owns which cosmetic loadout | Until 90 days of inactivity, then auto-pruned |
+| Equipped cosmetic slot IDs and cosmetic IDs | Sync your cosmetic outfit to other patcher users | Same as above |
+| Cosmetic settings (per-cosmetic JSON) | Sync cosmetic customization (colors, variants) | Same as above |
+| Last-seen timestamp | Prune inactive records | Same as above |
+
+### What is NOT stored
+
+- No Minecraft or Microsoft access tokens, session tokens, or refresh tokens. The mod never reads them and the service has no field that accepts them.
+- No IP addresses in the database. Your IP is held in memory for at most two minutes for rate limiting, and appears in the nginx access log like on any website.
+- No email addresses, passwords, or account credentials.
+- No playtime, server history, or gameplay data.
+- No chat messages, friend lists, or social data.
+- No hardware info, OS info, or device fingerprints.
+- No analytics, telemetry, or tracking of any kind.
+
+### How authentication works
+
+The client sends its UUID and username once per launcher session and receives a JWT containing only the UUID. Every later request derives who you are from that JWT, so no endpoint accepts a caller UUID as a parameter.
+
+**This does not currently verify the UUID against Mojang.** Anyone can ask the service for a JWT for any UUID and use it to overwrite that UUID's stored cosmetic loadout or list the members of a session. Nothing about this exposes your account or your tokens -- the worst case is someone changing which hat the mod draws on you, for other patcher users only. The planned fix is the standard `joinServer`/`hasJoined` handshake, which proves the UUID to the service without the service ever seeing an access token.
+
+### Operational metrics
+
+The service reports usage counters (`player_seen`, `cosmetic_sync_read`, `cosmetic_sync_write`) to a private admin dashboard on the same VPS. Those events carry your UUID and the cosmetic IDs involved, and nothing else.
+
+### Data deletion
+
+All player data is automatically deleted after 90 days of inactivity. To request immediate deletion, open an issue on this repository with your Minecraft UUID.
+
+### Data location
+
+The sync server runs on an OVH VPS located in France (EU). All data is subject to EU/GDPR regulations.
+
+## Supported Versions
+
+| Minecraft | Loaders |
+|-----------|---------|
+| 1.8.9 | Forge (legacy module; feature port in progress) |
+| 26.3 | Fabric |
+| 26.1 – 26.2 | Fabric |
+| 1.21.11 | Fabric |
+| 1.21.9 – 1.21.10 | Fabric |
+| 1.21.2 – 1.21.8 | Fabric |
+| 1.21.1 | NeoForge, Fabric |
+| 1.20.1 | Forge, Fabric |
+| 1.19.2 | Forge, Fabric |
+
+## Requirements
+
+- Essential 1.5.0.1
+- YACL (Yet Another Config Lib) — not required on 1.19.2, which has no YACL build; there the config
+  button opens `config/essentialpatcher.json` instead of a settings screen.
+
+## Building
+
+Modern versions:
+
+```bash
+./gradlew build
+```
+
+Legacy Forge 1.8.9 (separate ForgeGradle 2.1 project; use Java 8):
+
+```bash
+cd versions/1.8.9
+gradle setupDecompWorkspace
+gradle build
+```
+
+The 1.8.9 module is isolated because it uses the legacy ForgeGradle toolchain.
+Its current build provides the Forge 1.8.9 mod entry point only; modern Essential
+mixins are not binary/source compatible with Essential 1.8.9 and are not enabled
+until individually ported.
+
+Build outputs are generated under the Gradle build directories for the supported loaders.
+
+## Status
+
+This project is experimental and depends on Essential internals. Essential updates can break Mixins, cosmetic sync, telemetry blocking, or UI patches.
+
+## Disclaimer
+
+Essential Patcher is not affiliated with, endorsed by, approved by, or associated with Essential, ModCore Inc., Spark Universe, Mojang, Microsoft, or Minecraft.
+
+See [LEGALITY.md](./LEGALITY.md) for the full legal and technical position.
